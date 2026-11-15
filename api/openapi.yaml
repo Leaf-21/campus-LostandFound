@@ -1,0 +1,520 @@
+openapi: 3.0.3
+info:
+  title: Campus Lost & Found API
+  version: 1.0.0
+  description: |
+    校园失物招领平台 REST API 契约。
+    详细业务规则、状态流转、字段说明和请求响应示例以 docs/05_API接口规范文档.md 为准。
+servers:
+  - url: http://localhost:3000/api/v1
+    description: 本地开发环境
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Categories
+  - name: Files
+  - name: Posts
+  - name: Applications
+  - name: Admin
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: 用户注册
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, password, nickname]
+              properties:
+                account: { type: string, minLength: 4, maxLength: 30, pattern: '^[A-Za-z0-9_]+$' }
+                password: { type: string, minLength: 8, maxLength: 32, format: password }
+                nickname: { type: string, minLength: 1, maxLength: 20 }
+                email: { type: string, format: email, nullable: true }
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, password]
+              properties:
+                account: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 获取当前登录用户
+      responses:
+        '200':
+          description: 当前用户
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /categories:
+    get:
+      tags: [Categories]
+      summary: 获取启用的物品分类
+      security: []
+      responses:
+        '200':
+          description: 分类列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+  /files:
+    post:
+      tags: [Files]
+      summary: 上传图片
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: 上传成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+  /posts:
+    get:
+      tags: [Posts]
+      summary: 信息广场、搜索、筛选和分页
+      security: []
+      parameters:
+        - in: query
+          name: postType
+          schema: { type: string, enum: [LOST, FOUND] }
+        - in: query
+          name: keyword
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: location
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [OPEN, PROCESSING, RESOLVED, CLOSED, HIDDEN] }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [LATEST, OLDEST], default: LATEST }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        '200':
+          description: 分页信息列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+    post:
+      tags: [Posts]
+      summary: 发布寻物或招领信息
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateInput'
+      responses:
+        '201':
+          description: 发布成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /posts/{postId}:
+    parameters:
+      - in: path
+        name: postId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Posts]
+      summary: 获取信息详情
+      security: []
+      responses:
+        '200':
+          description: 信息详情
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Posts]
+      summary: 编辑本人 OPEN 状态信息
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostUpdateInput' }
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /users/me/posts:
+    get:
+      tags: [Posts]
+      summary: 获取当前用户发布的信息
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [OPEN, PROCESSING, RESOLVED, CLOSED, HIDDEN] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        '200':
+          description: 我的发布
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /posts/{postId}/applications:
+    parameters:
+      - in: path
+        name: postId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Applications]
+      summary: 发布者查看该信息收到的申请
+      responses:
+        '200':
+          description: 收到的申请列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Applications]
+      summary: 提交认领或线索申请
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [details]
+              properties:
+                details: { type: string, minLength: 10, maxLength: 500 }
+              description: 服务端依据 Post.postType 自动设置 CLAIM 或 CLUE
+      responses:
+        '201':
+          description: 申请提交成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /users/me/applications:
+    get:
+      tags: [Applications]
+      summary: 获取我提交的申请或收到的申请
+      parameters:
+        - in: query
+          name: role
+          required: true
+          schema: { type: string, enum: [SUBMITTED, RECEIVED] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, ACCEPTED, REJECTED, CANCELLED, COMPLETED] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+      responses:
+        '200':
+          description: 申请列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+  /applications/{applicationId}/decision:
+    post:
+      tags: [Applications]
+      summary: 发布者接受或拒绝申请
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [ACCEPTED, REJECTED] }
+                reviewNote: { type: string, maxLength: 500, nullable: true }
+      responses:
+        '200':
+          description: 处理成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /applications/{applicationId}/complete:
+    post:
+      tags: [Applications]
+      summary: 发布者确认物品交接完成
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 完成交接
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /admin/posts:
+    get:
+      tags: [Admin]
+      summary: 管理员查看信息列表（P1）
+      responses:
+        '200':
+          description: 管理列表
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/posts/{postId}/hide:
+    post:
+      tags: [Admin]
+      summary: 管理员隐藏违规信息（P1）
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 隐藏成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /users/me:
+    patch:
+      tags: [Auth]
+      summary: 修改当前用户个人资料（P1）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname: { type: string, minLength: 1, maxLength: 20 }
+                avatarUrl: { type: string, format: uri, nullable: true }
+                phone: { type: string, maxLength: 30, nullable: true }
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /posts/{postId}/close:
+    post:
+      tags: [Posts]
+      summary: 发布者关闭本人 OPEN 信息（P1）
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 关闭成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /applications/{applicationId}:
+    get:
+      tags: [Applications]
+      summary: 获取申请详情（P1）
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 申请详情
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /applications/{applicationId}/cancel:
+    post:
+      tags: [Applications]
+      summary: 申请人撤回 PENDING 申请（P1）
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 撤回成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /admin/posts/{postId}/restore:
+    post:
+      tags: [Admin]
+      summary: 管理员恢复被隐藏信息（P1）
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 恢复成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      required: [code, message, data, requestId]
+      properties:
+        code: { type: integer, example: 0 }
+        message: { type: string, example: success }
+        data: {}
+        requestId: { type: string, example: req-xxxxxxxx }
+    PostCreateInput:
+      type: object
+      required: [postType, title, description, categoryId, location, occurredAt]
+      properties:
+        postType: { type: string, enum: [LOST, FOUND] }
+        title: { type: string, minLength: 2, maxLength: 50 }
+        description: { type: string, minLength: 10, maxLength: 1000 }
+        categoryId: { type: string, format: uuid }
+        images:
+          type: array
+          maxItems: 5
+          items: { type: string, format: uri }
+        location: { type: string, minLength: 2, maxLength: 120 }
+        occurredAt: { type: string, format: date-time }
+        reward: { type: string, maxLength: 255, nullable: true }
+    PostUpdateInput:
+      type: object
+      description: PATCH 局部更新；仅允许更新 API 文档列出的可编辑字段
+      properties:
+        title: { type: string, minLength: 2, maxLength: 50 }
+        description: { type: string, minLength: 10, maxLength: 1000 }
+        categoryId: { type: string, format: uuid }
+        images:
+          type: array
+          maxItems: 5
+          items: { type: string, format: uri }
+        location: { type: string, minLength: 2, maxLength: 100 }
+        occurredAt: { type: string, format: date-time }
+        reward: { type: string, maxLength: 100, nullable: true }
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    Unauthorized:
+      description: 未登录或 Token 失效
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    Forbidden:
+      description: 无权限
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    Conflict:
+      description: 业务状态冲突或重复提交
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    TooLarge:
+      description: 上传文件过大
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    UnsupportedMediaType:
+      description: 文件类型不支持
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
