@@ -1,0 +1,12 @@
+// 校园失物招领平台 Prisma Schema
+// 数据模型于 11/18 按 docs/04_数据库设计文档.md 评审后补全（Issue I-04）。
+// 本文件当前仅固定 datasource 与 generator，保证 prisma generate 可用。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
