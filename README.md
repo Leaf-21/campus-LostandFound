@@ -74,6 +74,20 @@ campus-lost-found/
 
 开发环境和启动命令以 `docs/10_环境配置与部署说明.md` 为准。前端不得自行臆造后端字段；后端不得自行改变接口响应。接口不完整时先按 API 文档补齐契约，再继续编码。
 
+### 5.1 后端启动（成员 A，11/16 已可用）
+
+```bash
+cd backend
+npm ci
+cp .env.example .env   # Windows PowerShell: Copy-Item .env.example .env
+npm run dev            # http://localhost:3000
+```
+
+- 健康检查：`http://localhost:3000/health`（返回 `code=0`、`data.status="UP"`）。
+- 提交前检查：`npm run lint && npm run typecheck && npm test && npm run build`。
+- 更多脚本与目录说明见 `backend/README.md`；Prisma 迁移/Seed 于 11/18 接入（Issue I-04）。
+- 前端工程由成员 B 初始化（Issue I-02），启动命令届时补充到此处。
+
 ## 6. 文档入口
 
 | 文档 | 用途 |
