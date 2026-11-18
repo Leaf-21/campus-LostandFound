@@ -22,6 +22,8 @@ const envSchema = z.object({
   MAX_FILE_SIZE_MB: z.coerce.number().int().min(1).max(50).default(5),
   ADMIN_ACCOUNT: z.string().min(1).default('admin'),
   ADMIN_PASSWORD: z.string().min(1).default('change_this_before_seed'),
+  DEMO_USER_PASSWORD: z.string().min(1).default('Passw0rd!'),
+  PUBLIC_BASE_URL: z.string().url().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -60,3 +62,5 @@ export const corsOrigins: string[] = env.CORS_ORIGIN.split(',')
   .filter((origin) => origin.length > 0);
 
 export const uploadDirAbs: string = path.resolve(currentDir, '../..', env.UPLOAD_DIR);
+
+export const publicBaseUrl: string = env.PUBLIC_BASE_URL.replace(/\/+$/, '');

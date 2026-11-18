@@ -230,19 +230,15 @@ paths:
     get:
       tags: [Applications]
       summary: 发布者查看该信息收到的申请
+      description: |
+        契约修订 K1（2026-11-18）：data 为 Application 数组（不分页），PENDING 优先 + createdAt 倒序。
       parameters:
         - in: query
           name: status
           schema: { type: string, enum: [PENDING, ACCEPTED, REJECTED, CANCELLED, COMPLETED] }
-        - in: query
-          name: page
-          schema: { type: integer, minimum: 1, default: 1 }
-        - in: query
-          name: pageSize
-          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
       responses:
         '200':
-          description: 收到的申请列表
+          description: 收到的申请数组
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiResponse' }
@@ -296,6 +292,8 @@ paths:
     post:
       tags: [Applications]
       summary: 发布者接受或拒绝申请
+      description: |
+        契约修订 K2（2026-11-18）：data 为完整 Application 对象（不再包 {application, post}）。
       parameters:
         - in: path
           name: applicationId
@@ -323,6 +321,8 @@ paths:
     post:
       tags: [Applications]
       summary: 发布者确认物品交接完成
+      description: |
+        契约修订 K3（2026-11-18）：data 为完整 Application 对象（status=COMPLETED），帖子状态由详情接口刷新获取。
       parameters:
         - in: path
           name: applicationId
