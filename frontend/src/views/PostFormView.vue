@@ -52,19 +52,19 @@ const isEditOpen = computed(() => !isEdit.value || editStatus.value === 'OPEN')
 const rules: FormRules = {
   title: [
     { required: true, message: '请填写标题', trigger: 'blur' },
-    { min: 2, max: 30, message: '标题需在 2–30 字之间', trigger: 'blur' }
+    { min: 2, max: 50, message: '标题需在 2–50 字之间', trigger: 'blur' }
   ],
   description: [
     { required: true, message: '请填写详细描述', trigger: 'blur' },
-    { min: 10, max: 500, message: '描述需在 10–500 字之间', trigger: 'blur' }
+    { min: 10, max: 1000, message: '描述需在 10–1000 字之间', trigger: 'blur' }
   ],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   location: [
     { required: true, message: '请填写地点', trigger: 'blur' },
-    { min: 2, max: 50, message: '地点需在 2–50 字之间', trigger: 'blur' }
+    { min: 2, max: 100, message: '地点需在 2–100 字之间', trigger: 'blur' }
   ],
   occurredAt: [{ required: true, message: '请选择发生时间', trigger: 'change' }],
-  reward: [{ max: 50, message: '酬谢说明不超过 50 字', trigger: 'blur' }]
+  reward: [{ max: 100, message: '酬谢说明不超过 100 字', trigger: 'blur' }]
 }
 
 const disabledDate = (d: Date) => d.getTime() > Date.now()
@@ -175,7 +175,7 @@ onMounted(() => {
         <el-form-item label="标题" prop="title">
           <el-input
             v-model="form.title"
-            maxlength="30"
+            maxlength="50"
             show-word-limit
             placeholder="一句话描述，如：寻找黑色双肩包（图书馆）"
             :disabled="submitting"
@@ -197,7 +197,7 @@ onMounted(() => {
           <el-form-item label="地点" prop="location">
             <el-input
               v-model="form.location"
-              maxlength="50"
+              maxlength="100"
               show-word-limit
               placeholder="如：图书馆二楼自习区"
               :disabled="submitting"
@@ -222,9 +222,9 @@ onMounted(() => {
             v-model="form.description"
             type="textarea"
             :rows="6"
-            maxlength="500"
+            maxlength="1000"
             show-word-limit
-            placeholder="描述物品的品牌、颜色、显著特征，以及丢失/捡到的经过…（10–500 字）"
+            placeholder="描述物品的品牌、颜色、显著特征，以及丢失/捡到的经过…（10–1000 字）"
             :disabled="submitting"
           />
         </el-form-item>
@@ -232,9 +232,9 @@ onMounted(() => {
         <el-form-item label="酬谢说明（选填）" prop="reward">
           <el-input
             v-model="form.reward"
-            maxlength="50"
+            maxlength="100"
             show-word-limit
-            placeholder="如：捡到归还者酬谢一杯奶茶（50 字以内）"
+            placeholder="如：捡到归还者酬谢一杯奶茶（100 字以内）"
             :disabled="submitting"
           />
         </el-form-item>

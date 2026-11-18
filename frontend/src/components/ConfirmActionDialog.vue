@@ -23,7 +23,7 @@ const props = withDefaults(
     loading: false,
     noteEnabled: false,
     noteLabel: '处理说明',
-    notePlaceholder: '选填，最多 500 字，对方可在申请详情中看到'
+    notePlaceholder: '选填，最多 200 字，对方可在申请详情中看到'
   }
 )
 
@@ -72,7 +72,7 @@ function confirm() {
           v-model="note"
           type="textarea"
           :rows="3"
-          maxlength="500"
+          maxlength="200"
           show-word-limit
           :placeholder="notePlaceholder"
           :disabled="loading"

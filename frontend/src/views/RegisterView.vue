@@ -25,8 +25,8 @@ const rules: FormRules = {
   account: [
     { required: true, message: '请输入账号', trigger: 'blur' },
     {
-      pattern: /^[a-zA-Z0-9_]{4,20}$/,
-      message: '账号需为 4–20 位字母、数字或下划线',
+      pattern: /^[a-zA-Z0-9_]{4,30}$/,
+      message: '账号需为 4–30 位字母、数字或下划线',
       trigger: 'blur'
     }
   ],
@@ -37,7 +37,7 @@ const rules: FormRules = {
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 20, message: '密码需在 8–20 位之间', trigger: 'blur' }
+    { min: 8, max: 32, message: '密码需在 8–32 位之间', trigger: 'blur' }
   ],
   confirm: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
@@ -90,7 +90,7 @@ async function submit() {
           <el-input
             v-model="form.account"
             size="large"
-            placeholder="4–20 位字母、数字或下划线"
+            placeholder="4–30 位字母、数字或下划线"
             :prefix-icon="AtSign"
             autocomplete="username"
           />
@@ -118,7 +118,7 @@ async function submit() {
             size="large"
             type="password"
             show-password
-            placeholder="8–20 位密码"
+            placeholder="8–32 位密码"
             :prefix-icon="Lock"
             autocomplete="new-password"
           />
