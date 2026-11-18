@@ -8,8 +8,11 @@
 - MySQL 8.x（本机 8.2 / 文档指定 8.4 LTS 均可）。
 
 > **本项目使用 3307 端口的独立 MySQL 实例**（数据目录 `D:\dsh_project\.tools\mysqldata-lf`），
-> 与系统默认 3306 实例并存、互不影响，已在开机启动项中注册。
-> 启动/停止：`D:\dsh_project\.tools\start-mysql-lf.ps1` / `stop-mysql-lf.ps1`。
+> 与系统默认 3306 实例并存、互不影响。该实例**不设开机自启**，每次开发前手动启动：
+>
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File D:\dsh_project\.tools\start-mysql-lf.ps1
+> ```
 
 ## 快速启动
 
