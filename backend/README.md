@@ -7,17 +7,27 @@
 - Node.js 26 LTS（仓库根 `.nvmrc` 固定为 `26`），npm 随 Node 安装。
 - MySQL 8.x（本机 8.2 / 文档指定 8.4 LTS 均可）。
 
+> **本项目使用 3307 端口的独立 MySQL 实例**（数据目录 `D:\dsh_project\.tools\mysqldata-lf`），
+> 与系统默认 3306 实例并存、互不影响，已在开机启动项中注册。
+> 启动/停止：`D:\dsh_project\.tools\start-mysql-lf.ps1` / `stop-mysql-lf.ps1`。
+
 ## 快速启动
 
 ```bash
 cd backend
 npm ci
 cp .env.example .env   # Windows PowerShell: Copy-Item .env.example .env
-# 编辑 .env：DATABASE_URL（含密码与端口）、JWT_SECRET、ADMIN_PASSWORD
+# .env.example 默认已指向 3307；按需改 JWT_SECRET、ADMIN_PASSWORD
 npm run prisma:generate
 npx prisma migrate deploy   # 或 npm run prisma:migrate（开发态）
-npm run prisma:seed         # 分类 + 管理员 + 5 演示用户 + 15 帖 + 9 申请
+npm run prisma:seed         # 6 分类 + 管理员 + 5 演示用户 + 15 帖 + 9 申请
 npm run dev                 # http://localhost:3000
+```
+
+首次初始化数据库（若库不存在）：
+
+```bash
+mysql -uroot -P3307 -h127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS campus_lost_found CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS campus_lost_found_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
 验证：
@@ -79,9 +89,9 @@ VITE_API_BASE_URL=http://localhost:3000/api/v1
 ## 测试
 
 ```bash
-# 1) 准备测试库（只需一次）
-mysql -uroot -P3307 -e "CREATE DATABASE IF NOT EXISTS campus_lost_found_test"
-# 2) 在 .env 里配置 TEST_DATABASE_URL 指向测试库
+# 1) 准备测试库（只需一次，3307 实例）
+mysql -uroot -P3307 -h127.0.0.1 -e "CREATE DATABASE IF NOT EXISTS campus_lost_found_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+# 2) 在 .env 里配置 TEST_DATABASE_URL 指向测试库（.env.example 已给出 3307 示例）
 # 3) 运行
 npm test
 ```
