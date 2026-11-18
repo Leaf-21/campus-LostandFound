@@ -1,6 +1,6 @@
 // 校园失物招领平台 Prisma Schema
-// 数据模型于 11/18 按 docs/04_数据库设计文档.md 评审后补全（Issue I-04）。
-// 本文件当前仅固定 datasource 与 generator，保证 prisma generate 可用。
+// 依据 docs/04_数据库设计文档.md 与 docs/13 §5 实现清单。
+// 约定：模型 PascalCase + @@map 表名 snake_case；字段 @map snake_case；UUID 主键；DateTime(3)。
 
 generator client {
   provider = "prisma-client-js"
@@ -9,4 +9,144 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PostType {
+  LOST
+  FOUND
+}
+
+enum PostStatus {
+  OPEN
+  PROCESSING
+  RESOLVED
+  CLOSED
+  HIDDEN
+}
+
+enum ApplicationType {
+  CLAIM
+  CLUE
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Char(36)
+  account      String   @unique @db.VarChar(30)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  nickname     String   @db.VarChar(40)
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(500)
+  phone        String?  @db.VarChar(30)
+  email        String?  @db.VarChar(120)
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  posts        Post[]
+  applications Application[]
+  uploads      UploadedFile[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String  @id @default(uuid()) @db.Char(36)
+  code      String  @unique @db.VarChar(30)
+  name      String  @unique @db.VarChar(40)
+  sortOrder Int     @default(0) @map("sort_order")
+  isActive  Boolean @default(true) @map("is_active")
+
+  posts     Post[]
+
+  @@map("categories")
+}
+
+model Post {
+  id           String      @id @default(uuid()) @db.Char(36)
+  publisherId  String      @map("publisher_id") @db.Char(36)
+  categoryId   String      @map("category_id") @db.Char(36)
+  postType     PostType    @map("post_type")
+  title        String      @db.VarChar(100)
+  description  String      @db.Text
+  location     String      @db.VarChar(120)
+  occurredAt   DateTime    @map("occurred_at") @db.DateTime(3)
+  reward       String?     @db.VarChar(255)
+  status       PostStatus  @default(OPEN)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.DateTime(3)
+  resolvedAt   DateTime?   @map("resolved_at") @db.DateTime(3)
+
+  publisher    User        @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images       PostImage[]
+  applications Application[]
+
+  @@index([postType, status, createdAt])
+  @@index([categoryId, status])
+  @@index([publisherId, createdAt])
+  @@index([location])
+  @@map("posts")
+}
+
+model PostImage {
+  id        String   @id @default(uuid()) @db.Char(36)
+  postId    String   @map("post_id") @db.Char(36)
+  url       String   @db.VarChar(500)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, sortOrder])
+  @@map("post_images")
+}
+
+model Application {
+  id             String            @id @default(uuid()) @db.Char(36)
+  postId         String            @map("post_id") @db.Char(36)
+  applicantId    String            @map("applicant_id") @db.Char(36)
+  applicationType ApplicationType  @map("application_type")
+  details        String            @db.VarChar(1000)
+  status         ApplicationStatus @default(PENDING)
+  reviewNote     String?           @map("review_note") @db.VarChar(500)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.DateTime(3)
+  reviewedAt     DateTime?         @map("reviewed_at") @db.DateTime(3)
+  completedAt    DateTime?         @map("completed_at") @db.DateTime(3)
+
+  post           Post              @relation(fields: [postId], references: [id], onDelete: Restrict)
+  applicant      User              @relation(fields: [applicantId], references: [id], onDelete: Restrict)
+
+  @@index([postId, status])
+  @@index([applicantId, createdAt])
+  @@index([postId, applicantId])
+  @@map("applications")
+}
+
+// docs/13 D1 决议：上传发生在建帖之前，需独立存储文件元数据
+model UploadedFile {
+  id          String   @id @default(uuid()) @db.Char(36)
+  url         String   @db.VarChar(500)
+  fileName    String   @map("file_name") @db.VarChar(255)
+  size        Int
+  contentType String   @map("content_type") @db.VarChar(50)
+  uploaderId  String   @map("uploader_id") @db.Char(36)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  uploader    User     @relation(fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([uploaderId, createdAt])
+  @@map("uploaded_files")
 }

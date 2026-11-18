@@ -481,6 +481,8 @@ PENDING ──发布者接受──> ACCEPTED ──发布者确认完成──>
 
 前端约定：先在页面显示本地预览，上传成功后将响应中的 `url` 放入信息发布请求的 `images` 数组；发布信息时不得传本地 `blob:` 地址。
 
+> 契约说明（2026-11-18，K4）：`url` 为**可直接访问的绝对地址**（形如 `http://localhost:3000/uploads/<filename>`），由后端按 `PUBLIC_BASE_URL` 拼接；前端可直接用于 `<img src>`，无需再拼接前缀。
+
 ---
 
 ## 8. 失物信息接口
@@ -678,9 +680,11 @@ GET /api/v1/posts?postType=FOUND&keyword=校园卡&categoryId=10000000-0000-4000
 
 `GET /posts/{postId}/applications`（需要登录）
 
-查询参数：`status`、`page`、`pageSize`。
+查询参数：`status`（可选）。
 
-规则：仅该信息发布者或管理员可访问。成功响应 `data` 为统一分页结构，`items` 为 `Application` 数组。
+规则：仅该信息发布者或管理员可访问。成功响应 `data` 为 **`Application` 数组（不分页）**，按「`PENDING` 优先、其余按 `createdAt` 倒序」排序。
+
+> 契约修订（2026-11-18，K1）：与前端 `getPostApplications` 实现对齐，由分页结构改为数组。原因：详情页一次展示该帖全部申请（单帖申请量小），分页会增加无意义交互。
 
 ### 9.3 我的申请与收到的申请
 
@@ -729,21 +733,24 @@ GET /api/v1/posts?postType=FOUND&keyword=校园卡&categoryId=10000000-0000-4000
 4. 接受一条申请后，同一信息的其他 `PENDING` 申请自动变为 `REJECTED`。
 5. 拒绝后申请状态变为 `REJECTED`；若没有其他已接受申请，信息仍保持 `OPEN`。
 
-成功响应 `data`：
+成功响应 `data`：**完整 `Application` 对象**（含 `postId`、`postTitle`、`status`、`reviewNote` 等）。
 
 ```json
 {
-  "application": {
-    "id": "40000000-0000-4000-8000-000000000001",
-    "status": "ACCEPTED",
-    "reviewNote": "请通过站内方式进一步核对物品特征。"
-  },
-  "post": {
-    "id": "30000000-0000-4000-8000-000000000001",
-    "status": "PROCESSING"
-  }
+  "id": "40000000-0000-4000-8000-000000000001",
+  "postId": "30000000-0000-4000-8000-000000000001",
+  "postTitle": "在图书馆一楼拾获校园卡",
+  "applicationType": "CLAIM",
+  "details": "物品特征描述……",
+  "status": "ACCEPTED",
+  "applicant": { "id": "00000000-0000-4000-8000-000000000103", "nickname": "小周", "avatarUrl": null },
+  "reviewNote": "请通过站内方式进一步核对物品特征。",
+  "createdAt": "2026-11-16T11:00:00+08:00",
+  "updatedAt": "2026-11-16T12:30:00+08:00"
 }
 ```
+
+> 契约修订（2026-11-18，K2）：与前端 `decideApplication` 对齐，由 `{application, post}` 包装结构改为直接返回 `Application`。前端操作成功后刷新列表与详情获取最新帖子状态。
 
 ### 9.6 申请人撤回申请
 
@@ -757,17 +764,24 @@ GET /api/v1/posts?postType=FOUND&keyword=校园卡&categoryId=10000000-0000-4000
 
 请求体可为空。规则：仅信息发布者可以确认；申请必须处于 `ACCEPTED`，对应信息必须处于 `PROCESSING`。成功后申请变为 `COMPLETED`，信息变为 `RESOLVED`。
 
-成功响应 `data`：
+成功响应 `data`：**完整 `Application` 对象**，`status` 为 `COMPLETED`（信息侧 `RESOLVED` 由前端刷新详情获得）。
 
 ```json
 {
-  "applicationId": "40000000-0000-4000-8000-000000000001",
-  "applicationStatus": "COMPLETED",
+  "id": "40000000-0000-4000-8000-000000000001",
   "postId": "30000000-0000-4000-8000-000000000001",
-  "postStatus": "RESOLVED",
-  "completedAt": "2026-11-17T16:30:00+08:00"
+  "postTitle": "在图书馆一楼拾获校园卡",
+  "applicationType": "CLAIM",
+  "details": "物品特征描述……",
+  "status": "COMPLETED",
+  "applicant": { "id": "00000000-0000-4000-8000-000000000103", "nickname": "小周", "avatarUrl": null },
+  "reviewNote": "请到 3 号楼 501 领取",
+  "createdAt": "2026-11-16T11:00:00+08:00",
+  "updatedAt": "2026-11-17T16:30:00+08:00"
 }
 ```
+
+> 契约修订（2026-11-18，K3）：与前端 `completeApplication` 对齐，改为返回完整 `Application`。
 
 ---
 
