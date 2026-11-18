@@ -203,6 +203,9 @@ paths:
       summary: 获取当前用户发布的信息
       parameters:
         - in: query
+          name: postType
+          schema: { type: string, enum: [LOST, FOUND] }
+        - in: query
           name: status
           schema: { type: string, enum: [OPEN, PROCESSING, RESOLVED, CLOSED, HIDDEN] }
         - in: query
@@ -227,6 +230,16 @@ paths:
     get:
       tags: [Applications]
       summary: 发布者查看该信息收到的申请
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, ACCEPTED, REJECTED, CANCELLED, COMPLETED] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
       responses:
         '200':
           description: 收到的申请列表
@@ -297,7 +310,7 @@ paths:
               required: [decision]
               properties:
                 decision: { type: string, enum: [ACCEPTED, REJECTED] }
-                reviewNote: { type: string, maxLength: 500, nullable: true }
+                reviewNote: { type: string, maxLength: 200, nullable: true }
       responses:
         '200':
           description: 处理成功
@@ -327,6 +340,22 @@ paths:
     get:
       tags: [Admin]
       summary: 管理员查看信息列表（P1）
+      parameters:
+        - in: query
+          name: keyword
+          schema: { type: string }
+        - in: query
+          name: postType
+          schema: { type: string, enum: [LOST, FOUND] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [OPEN, PROCESSING, RESOLVED, CLOSED, HIDDEN] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
       responses:
         '200':
           description: 管理列表
@@ -465,9 +494,9 @@ components:
           type: array
           maxItems: 5
           items: { type: string, format: uri }
-        location: { type: string, minLength: 2, maxLength: 120 }
+        location: { type: string, minLength: 2, maxLength: 100 }
         occurredAt: { type: string, format: date-time }
-        reward: { type: string, maxLength: 255, nullable: true }
+        reward: { type: string, maxLength: 100, nullable: true }
     PostUpdateInput:
       type: object
       description: PATCH 局部更新；仅允许更新 API 文档列出的可编辑字段
