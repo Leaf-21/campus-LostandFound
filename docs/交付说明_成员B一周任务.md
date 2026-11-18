@@ -1,4 +1,4 @@
-# 交付说明 · 成员 B 一周任务（11/18–11/24 前端）
+# 交付说明 · 成员 B 前端全部任务（11/16–11/29）
 
 > 本文档面向组内协作：成员 B 前端全部交付内容、运行方法、构建注意事项与推送到 GitHub 的步骤。
 > 全程遵循 `docs/05_API接口规范文档.md` 契约与 `docs/06_并行开发与Mock联调规范.md`，未臆造任何字段。
@@ -36,29 +36,11 @@ npm run dev                                        # http://localhost:5173
 - 换到没有该策略的电脑时，此 overrides 可以保留（完全兼容）或删除。
 - 构建时会出现 chunk 超过 500kB 的提示：Element Plus 全量引入所致，属既定技术栈决策，不影响使用。
 
-## 四、推送到 GitHub（需要成员操作）
+## 四、推送到 GitHub（已完成）
 
-本机无法直连 github.com，代码已完成本地提交，推送步骤如下：
-
-1. 配置 SSH 免翻墙通道（GitHub 官方支持 443 端口），在 `~/.ssh/config` 添加：
-
-   ```
-   Host github.com
-     HostName ssh.github.com
-     Port 443
-     User git
-   ```
-
-   将本机公钥添加到 GitHub 账号（Settings → SSH keys）后，用 `ssh -T git@github.com` 验证。
-
-2. 拉取远端并变基后推送（本地提交与远端无共同历史，**请勿直接 force push**）：
-
-   ```bash
-   git remote add origin git@github.com:Leaf-21/campus-LostandFound.git
-   git fetch origin
-   git rebase origin/main        # 本提交只新增 frontend/ 与本文档，与远端无文件冲突，可直接通过
-   git push -u origin main
-   ```
+- 2026-11-18 已通过 SSH-over-443 通道推送到 main：`3f1587c`（11/16–17 设计冻结文档）、`79f818e`（前端全部代码）。
+- 本机已配置仓库级 `core.sshCommand`（指向 `~/.ssh/e4_b11_ed25519`），后续在本机直接 `git push` 即可，无需再配置。
+- 若在别的电脑上推送，走 SSH 443 通道：在 `~/.ssh/config` 添加 `Host github.com → HostName ssh.github.com / Port 443 / User git`，并把公钥添加到 GitHub 账号。
 
 ## 五、目录速览
 
@@ -75,3 +57,24 @@ frontend/src/
 ├── views/         # 9 个页面
 └── styles/        # tokens.scss（设计 Token + Element 变量映射）
 ```
+
+## 六、第二周收尾记录（11/25–11/29 任务）
+
+### 可用性测试（对应 11/25–11/26）
+
+- 浏览器自动化跑通主流程：登录、信息广场筛选搜索、详情页、发布表单、申请提交、个人中心三 Tab。
+- 发现并修复 1 个缺陷：详情页"我的申请状态"取最早一条申请，导致拒绝后重新提交时页面仍显示旧的"重新提交"按钮、而提交接口按最新一条校验返回 409。已改为取最新一条申请（`src/mock/handlers.ts` 的 `mockGetPostDetail`），重新提交后状态展示与接口行为一致。
+- 曾怀疑"发布页点击分类后页面跳转"，经本地 Playwright 精确复现（hook `history.pushState` 打印调用栈）确认是自动化工具的点击偏差，代码无此问题。
+- 回归确认：1366px 桌面与 390px 移动端各关键页面均**无横向滚动**（截图脚本内置溢出检查全部通过）。
+
+### 演示截图（对应 11/28）
+
+- `docs/演示截图/` 共 10 张（桌面 6 张 + 移动 4 张）：首页、登录、信息广场、详情、发布、个人中心。
+- 可重复生成：`cd frontend && node screenshot-demo.mjs`（依赖 playwright-core 驱动本机 Chrome/Edge，`npm ci` 已包含）。
+- 调试辅助脚本 `frontend/debug-repro.mjs`：登录 → 发布页 → 点击分类/日期并输出跳转调用栈，供复现页面问题使用。
+
+### 操作说明（对应 11/29）
+
+- 演示入口：`npm run dev` 后访问 http://localhost:5173。
+- 推荐演示动线：首页（未登录浏览）→ 登录（`student2026` / `Passw0rd!`）→ 信息广场筛选 → 详情页提交申请 → 个人中心"我收到"接受申请（观察其余待处理自动拒绝）→ 完成交接 → 状态变化全程可见。
+- 演示注意事项：Mock 种子图片为外网占位图，断网时卡片自动降级为"暂无图片"占位，属预期设计；Mock 数据为内存态，重启 dev server 即恢复种子数据。

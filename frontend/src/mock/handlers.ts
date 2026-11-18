@@ -166,7 +166,11 @@ export async function mockGetPostDetail(id: string): Promise<PostDetail> {
   const detail: PostDetail = { ...post, currentUserRelation: null }
   if (tokenStore.get()) {
     const me = current()
-    const myApp = applications.find((a) => a.postId === id && a.applicant.id === me.id)
+    // 取该用户最新一条申请（重复提交时旧的 REJECTED 不应覆盖新的 PENDING 状态展示）
+    const mine = applications
+      .filter((a) => a.postId === id && a.applicant.id === me.id)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    const myApp = mine[0]
     detail.currentUserRelation = {
       isPublisher: post.publisher.id === me.id,
       myApplicationStatus: myApp?.status ?? null
