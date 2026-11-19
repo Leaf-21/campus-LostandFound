@@ -52,12 +52,20 @@ campus-lost-found/
 │   ├── 09_两周开发排期与任务拆解.md
 │   ├── 10_环境配置与部署说明.md
 │   ├── 11_开发前检查清单.md
-│   └── 12_GitHub初始Issue清单.md
+│   ├── 12_GitHub初始Issue清单.md
+│   ├── 13_核心数据与业务规则评审记录.md
+│   ├── 14_部署与交付说明.md
+│   └── 演示截图/
+├── docker-compose.yml
+├── .env.docker.example
 ├── api/
 │   └── openapi.yaml
 ├── frontend/
-├── backend/
-└── tests/
+└── backend/
+    ├── Dockerfile
+    ├── prisma/
+    ├── src/
+    └── test/
 ```
 
 ## 4. 核心页面
@@ -106,6 +114,7 @@ npm run dev            # http://localhost:3000
 | `11_开发前检查清单.md` | 进入编码前逐项确认 |
 | `12_GitHub初始Issue清单.md` | 可直接转换为 GitHub Issues 的工作拆分 |
 | `13_核心数据与业务规则评审记录.md` | 11/17 成员 A 数据/规则评审结论、冲突修正与待确认决议 |
+| `14_部署与交付说明.md` | 环境要求、本地/容器部署步骤、演示账号、验收对照 |
 
 ## 7. 规则冲突时的优先级
 

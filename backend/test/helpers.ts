@@ -1,13 +1,17 @@
 import request from 'supertest';
 import type { Express } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/prisma.js';
 
 export const DEMO_PASSWORD = 'Passw0rd!';
 export const DEMO_ACCOUNT = 'student2026';
 export const DEMO_ACCOUNT_2 = 'azhe2026';
+export const ADMIN_ACCOUNT = 'admin_test';
+export const ADMIN_PASSWORD = 'Admin@Test2026';
 
 /** 清空业务表（保留分类），保证每个测试文件从确定状态开始 */
 export async function resetDb(): Promise<void> {
+  await prisma.adminAction.deleteMany();
   await prisma.application.deleteMany();
   await prisma.postImage.deleteMany();
   await prisma.post.deleteMany();
@@ -44,6 +48,27 @@ export async function registerAndLogin(app: Express, account: string, nickname: 
     throw new Error(`登录失败: ${loginRes.status} ${JSON.stringify(loginRes.body)}`);
   }
   return { id: registerRes.body.data.id, account, token: loginRes.body.data.accessToken };
+}
+
+/**
+ * 创建管理员并登录。
+ * 注册接口只产出 USER 角色，因此直接写库把 role 提升为 ADMIN。
+ */
+export async function registerAndLoginAsAdmin(
+  app: Express,
+  account = ADMIN_ACCOUNT,
+  nickname = '测试管理员',
+): Promise<TestUser> {
+  const user = await registerAndLogin(app, account, nickname);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { role: 'ADMIN', passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10) },
+  });
+  const loginRes = await request(app).post('/api/v1/auth/login').send({ account, password: DEMO_PASSWORD });
+  if (loginRes.status !== 200) {
+    throw new Error(`管理员登录失败: ${loginRes.status}`);
+  }
+  return { ...user, token: loginRes.body.data.accessToken };
 }
 
 export function auth(token: string): { Authorization: string } {

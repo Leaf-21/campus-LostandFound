@@ -47,22 +47,26 @@ curl http://localhost:3000/api/v1/posts    # 信息广场（默认 OPEN + PROCES
 | `student2026` | 小林 | 主演示账号（有发布、有收到的申请、有待处理线索） |
 | `azhe2026` | 阿哲 | 第二演示账号（用于「B 申请 A 的帖子」） |
 | `orange2026` / `xiaobei2026` / `anan2026` | 橙子学姐 / 小北 / 安安 | 数据集丰富度 |
-| `admin` | 平台管理员 | 密码取 `ADMIN_PASSWORD`；P1 管理接口未实现 |
+| `admin` | 平台管理员 | 密码取 `ADMIN_PASSWORD`；可访问 `/api/v1/admin/*` |
 
-## 已实现接口（P0 全部）
+## 已实现接口（P0 全量 + P1 管理员）
 
 | 模块 | 接口 |
 |---|---|
 | 健康检查 | `GET /health` |
 | 认证 | `POST /api/v1/auth/register`、`POST /api/v1/auth/login`、`GET /api/v1/auth/me` |
+| 资料 | `PATCH /api/v1/users/me`（昵称/头像/电话/邮箱；account、role 不可改） |
 | 分类 | `GET /api/v1/categories` |
 | 信息 | `GET /api/v1/posts`（搜索/筛选/排序/分页）、`GET /api/v1/posts/{id}`、`POST /api/v1/posts`、`PATCH /api/v1/posts/{id}`、`POST /api/v1/posts/{id}/close`（P1） |
 | 我的发布 | `GET /api/v1/users/me/posts` |
 | 上传 | `POST /api/v1/files`（JPG/PNG/WEBP，≤5MB） |
 | 申请 | `POST /api/v1/posts/{id}/applications`、`GET /api/v1/posts/{id}/applications`、`GET /api/v1/users/me/applications`、`GET /api/v1/applications/{id}` |
 | 申请处理 | `POST /api/v1/applications/{id}/decision`、`POST /api/v1/applications/{id}/complete`、`POST /api/v1/applications/{id}/cancel`（P1） |
+| **管理（P1）** | `GET /api/v1/admin/posts`（含 HIDDEN）、`POST /api/v1/admin/posts/{id}/hide`、`POST /api/v1/admin/posts/{id}/restore`、`GET /api/v1/admin/posts/{id}/actions` |
 
-未实现：`/api/v1/admin/*`（P1，排在 P0 完成后）。
+> 管理员接口全部要求 `ADMIN` 角色；普通用户访问返回 403/40301，未登录 401/40101。
+> 隐藏信息会保存原状态到 `posts.previous_status`，恢复时精确还原（RESOLVED 帖不会变成 OPEN），并写入 `admin_actions` 审计日志。
+> 前端管理页面未实现（docs/09 §6 列为可砍 P1），接口可直接用 REST 客户端调用。
 
 ## 前端联调
 
@@ -82,7 +86,7 @@ VITE_API_BASE_URL=http://localhost:3000/api/v1
 | `npm run dev` | tsx watch 开发启动 |
 | `npm run build` / `npm run start` | 编译到 `dist/` 并以产物运行 |
 | `npm run typecheck` / `npm run lint` | 类型检查 / ESLint |
-| `npm test` | Vitest + supertest 集成测试（**73 个用例**，使用独立测试库） |
+| `npm test` | Vitest + supertest 集成测试（**103 个用例**，使用独立测试库） |
 | `npm run prisma:generate` | 生成 Prisma Client |
 | `npm run prisma:migrate` / `prisma:deploy` | 开发迁移 / 生产迁移 |
 | `npm run prisma:seed` | 写入演示数据（幂等 upsert，可重复执行） |
@@ -101,13 +105,41 @@ npm test
 
 测试会自行执行 `prisma migrate deploy`，每个文件前清表，互不干扰。
 
+当前测试分布：
+
+| 文件 | 用例数 | 覆盖 |
+|---|---|---|
+| `test/auth.test.ts` | 9 | 注册/登录/me、账号重复、错误密码、坏 token |
+| `test/posts.test.ts` | 25 | 列表筛选排序分页、详情、发布、编辑 |
+| `test/applications.test.ts` | 23 | 申请、接受/拒绝/完成事务、撤回、权限 |
+| `test/files.test.ts` | 7 | 上传成功、格式/大小拒绝、未登录 |
+| `test/admin.test.ts` | 21 | 管理员权限、列表含 HIDDEN、隐藏/恢复状态还原、审计日志 |
+| `test/users.test.ts` | 9 | 资料编辑白名单、字段校验、account/role 不可改 |
+| `test/app.test.ts` + `validate.test.ts` | 9 | 健康检查、CORS、统一错误、Zod 校验 |
+| **合计** | **103** | |
+
+## 部署
+
+生产部署（Docker 或裸机）见 **[docs/14_部署与交付说明.md](../docs/14_部署与交付说明.md)**。
+
+Docker 快速开始：
+
+```bash
+cp .env.docker.example .env.docker   # 填写真实密钥
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker exec backend npx prisma migrate deploy
+docker compose --env-file .env.docker exec backend npm run prisma:seed
+```
+
 ## 目录结构
 
 ```text
 backend/
+├── Dockerfile                 # 多阶段生产镜像
+├── .dockerignore
 ├── prisma/
-│   ├── schema.prisma          # 5 实体 + UploadedFile，枚举/索引/外键齐全
-│   ├── migrations/            # 版本化迁移
+│   ├── schema.prisma          # 5 实体 + UploadedFile + AdminAction，枚举/索引/外键齐全
+│   ├── migrations/            # 2 个版本化迁移（init + add_admin_actions）
 │   └── seed.ts                # 与前端 mock 完全对齐的演示数据
 ├── src/
 │   ├── config/                # env（Zod 校验）、prisma
@@ -119,6 +151,8 @@ backend/
 │   ├── middleware/            # requestId、错误处理、Zod 校验、auth（必选/可选/管理员）
 │   ├── modules/
 │   │   ├── health/ auth/ categories/ posts/ applications/ files/
+│   │   ├── admin/             # P1：管理端列表、隐藏/恢复、审计日志
+│   │   └── users/             # P1：PATCH /users/me 资料编辑
 │   ├── utils/                 # asyncHandler、jwt、password、time、params
 │   ├── types/                 # express.d.ts（req.user）
 │   ├── app.ts                 # Express 组装（可测试）

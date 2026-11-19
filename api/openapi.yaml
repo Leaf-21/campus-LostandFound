@@ -367,14 +367,25 @@ paths:
     post:
       tags: [Admin]
       summary: 管理员隐藏违规信息（P1）
+      description: |
+        状态改为 HIDDEN，同时把原状态存入 posts.previous_status 供恢复时还原，
+        并写入 admin_actions 审计日志（action=HIDE）。重复隐藏返回 409/40901。
       parameters:
         - in: path
           name: postId
           required: true
           schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 200, description: 隐藏原因，记入审计日志 }
       responses:
         '200':
-          description: 隐藏成功
+          description: 隐藏成功，返回 { post, action }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiResponse' }
@@ -391,8 +402,9 @@ paths:
               type: object
               properties:
                 nickname: { type: string, minLength: 1, maxLength: 20 }
-                avatarUrl: { type: string, format: uri, nullable: true }
+                avatarUrl: { type: string, format: uri, maxLength: 500, nullable: true }
                 phone: { type: string, maxLength: 30, nullable: true }
+                email: { type: string, format: email, maxLength: 120, nullable: true }
       responses:
         '200':
           description: 更新成功
@@ -460,9 +472,38 @@ paths:
           name: postId
           required: true
           schema: { type: string, format: uuid }
+      description: |
+        仅 status=HIDDEN 的信息可恢复（否则 409/40901）。
+        恢复后的状态取 posts.previous_status；若历史值为空则回落 OPEN。
+        同时写入 admin_actions 审计日志（action=RESTORE）。
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 200, description: 恢复原因，记入审计日志 }
       responses:
         '200':
-          description: 恢复成功
+          description: 恢复成功，返回 { post, action }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /admin/posts/{postId}/actions:
+    get:
+      tags: [Admin]
+      summary: 查看某条信息的管理员操作日志（P1）
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 操作日志数组（按时间倒序）
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiResponse' }
