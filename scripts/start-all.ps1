@@ -142,7 +142,10 @@ Write-Step 1 $totalSteps "启动 MySQL（端口 3307）"
 if (Test-Port 3307) {
   Write-Host "  已在运行，跳过" -ForegroundColor DarkGray
 } else {
-  & powershell -ExecutionPolicy Bypass -File $mysqlScript | ForEach-Object { Write-Host "  $_" }
+  # 注意：不能用 "| ForEach-Object" 捕获输出
+  # mysqld 是常驻进程，会继承管道句柄，导致管道永不关闭、脚本永久挂起
+  # 直接调用，让子脚本自身输出直通终端
+  & powershell -ExecutionPolicy Bypass -File $mysqlScript
   # 仅端口通不代表可查询，用 SQL 确认
   # 注意：MySQL 启动初期查询会报 ERROR 2003，需屏蔽 stderr 且不让其中断脚本
   $ready = $false
