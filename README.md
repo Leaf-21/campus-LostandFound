@@ -52,12 +52,18 @@ campus-lost-found/
 │   ├── 09_两周开发排期与任务拆解.md
 │   ├── 10_环境配置与部署说明.md
 │   ├── 11_开发前检查清单.md
-│   └── 12_GitHub初始Issue清单.md
+│   ├── 12_GitHub初始Issue清单.md
+│   ├── 13_核心数据与业务规则评审记录.md
+│   ├── 14_部署与交付说明.md
+│   └── 演示截图/
+├── scripts/            # 一键启动/关闭脚本
 ├── api/
 │   └── openapi.yaml
 ├── frontend/
-├── backend/
-└── tests/
+└── backend/
+    ├── prisma/
+    ├── src/
+    └── test/
 ```
 
 ## 4. 核心页面
@@ -74,19 +80,44 @@ campus-lost-found/
 
 开发环境和启动命令以 `docs/10_环境配置与部署说明.md` 为准。前端不得自行臆造后端字段；后端不得自行改变接口响应。接口不完整时先按 API 文档补齐契约，再继续编码。
 
-### 5.1 后端启动（成员 A，11/16 已可用）
+### 5.1 一键启动（推荐）
+
+```powershell
+# 启动 MySQL + 后端 + 前端，完成后自动打开浏览器
+powershell -ExecutionPolicy Bypass -File scripts\start-all.ps1
+
+# 关闭全部服务
+powershell -ExecutionPolicy Bypass -File scripts\stop-all.ps1
+```
+
+浏览器访问 **http://localhost:5173**，演示账号 `student2026 / Passw0rd!`。
+
+脚本会自动检查环境、按依赖顺序启动、等待每项服务真正就绪。详细说明见 [scripts/README.md](scripts/README.md)。
+
+> 首次使用需先安装依赖：`cd backend && npm ci`、`cd frontend && npm ci`，并复制两侧 `.env.example` 为 `.env`。
+
+### 5.2 手动启动（分步）
 
 ```bash
+# 1. 数据库（项目专用 3307 实例）
+powershell -ExecutionPolicy Bypass -File D:\dsh_project\.tools\start-mysql-lf.ps1
+
+# 2. 后端
 cd backend
 npm ci
 cp .env.example .env   # Windows PowerShell: Copy-Item .env.example .env
 npm run dev            # http://localhost:3000
+
+# 3. 前端（另开终端）
+cd frontend
+npm ci
+cp .env.example .env
+npm run dev            # http://localhost:5173
 ```
 
 - 健康检查：`http://localhost:3000/health`（返回 `code=0`、`data.status="UP"`）。
 - 提交前检查：`npm run lint && npm run typecheck && npm test && npm run build`。
-- 更多脚本与目录说明见 `backend/README.md`；Prisma 迁移/Seed 于 11/18 接入（Issue I-04）。
-- 前端工程由成员 B 初始化（Issue I-02），启动命令届时补充到此处。
+- 更多脚本与目录说明见 `backend/README.md`；部署说明见 `docs/14_部署与交付说明.md`。
 
 ## 6. 文档入口
 
@@ -106,6 +137,7 @@ npm run dev            # http://localhost:3000
 | `11_开发前检查清单.md` | 进入编码前逐项确认 |
 | `12_GitHub初始Issue清单.md` | 可直接转换为 GitHub Issues 的工作拆分 |
 | `13_核心数据与业务规则评审记录.md` | 11/17 成员 A 数据/规则评审结论、冲突修正与待确认决议 |
+| `14_部署与交付说明.md` | 环境要求、本地/容器部署步骤、演示账号、验收对照 |
 
 ## 7. 规则冲突时的优先级
 

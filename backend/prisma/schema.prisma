@@ -57,6 +57,7 @@ model User {
   posts        Post[]
   applications Application[]
   uploads      UploadedFile[]
+  adminActions AdminAction[]
 
   @@map("users")
 }
@@ -83,7 +84,9 @@ model Post {
   location     String      @db.VarChar(120)
   occurredAt   DateTime    @map("occurred_at") @db.DateTime(3)
   reward       String?     @db.VarChar(255)
-  status       PostStatus  @default(OPEN)
+  status         PostStatus  @default(OPEN)
+  // docs/13 D9 / docs/05 §10.3：隐藏时保存原状态，恢复时还原
+  previousStatus PostStatus? @map("previous_status")
   createdAt    DateTime    @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.DateTime(3)
   resolvedAt   DateTime?   @map("resolved_at") @db.DateTime(3)
@@ -149,4 +152,21 @@ model UploadedFile {
 
   @@index([uploaderId, createdAt])
   @@map("uploaded_files")
+}
+
+// docs/13 D9：管理员操作审计日志（只插入，不更新/删除）
+model AdminAction {
+  id         String   @id @default(uuid()) @db.Char(36)
+  adminId    String   @map("admin_id") @db.Char(36)
+  targetType String   @map("target_type") @db.VarChar(30)
+  targetId   String   @map("target_id") @db.Char(36)
+  action     String   @db.VarChar(20)
+  reason     String?  @db.VarChar(200)
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([targetType, targetId, createdAt])
+  @@index([adminId, createdAt])
+  @@map("admin_actions")
 }
