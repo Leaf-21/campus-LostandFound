@@ -56,13 +56,10 @@ campus-lost-found/
 │   ├── 13_核心数据与业务规则评审记录.md
 │   ├── 14_部署与交付说明.md
 │   └── 演示截图/
-├── docker-compose.yml
-├── .env.docker.example
 ├── api/
 │   └── openapi.yaml
 ├── frontend/
 └── backend/
-    ├── Dockerfile
     ├── prisma/
     ├── src/
     └── test/

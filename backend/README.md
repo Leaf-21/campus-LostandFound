@@ -120,23 +120,16 @@ npm test
 
 ## 部署
 
-生产部署（Docker 或裸机）见 **[docs/14_部署与交付说明.md](../docs/14_部署与交付说明.md)**。
+本地开发与浏览器操作按本文件上方的「快速启动」三步完成即可（起数据库 → 起后端 → 起前端）。
 
-Docker 快速开始：
+如需对外演示，按 **[docs/14_部署与交付说明.md](../docs/14_部署与交付说明.md)** §5 的裸机方式部署（pm2 托管后端 + Nginx 托管前端静态资源）。
 
-```bash
-cp .env.docker.example .env.docker   # 填写真实密钥
-docker compose --env-file .env.docker up -d --build
-docker compose --env-file .env.docker exec backend npx prisma migrate deploy
-docker compose --env-file .env.docker exec backend npm run prisma:seed
-```
+> 本项目不引入容器化：docs/00 §2 技术栈冻结清单不含 Docker，验收标准（docs/08 §7）只要求「前后端可从 README 按步骤启动」。
 
 ## 目录结构
 
 ```text
 backend/
-├── Dockerfile                 # 多阶段生产镜像
-├── .dockerignore
 ├── prisma/
 │   ├── schema.prisma          # 5 实体 + UploadedFile + AdminAction，枚举/索引/外键齐全
 │   ├── migrations/            # 2 个版本化迁移（init + add_admin_actions）
