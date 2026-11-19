@@ -105,6 +105,32 @@ if ($KeepMySQL) {
   }
 }
 
+# ---------- 清理启动器与残留进程 ----------
+# 端口关闭后，独立启动器（_run-*.ps1）的 powershell 进程和 npm 包装进程可能仍存活，
+# 一并清理，避免下次启动时残留占用资源
+Write-Host "清理启动器与残留进程…" -ForegroundColor Cyan
+
+$staleCount = 0
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+  Where-Object { $_.CommandLine -like '*_run-backend.ps1*' -or $_.CommandLine -like '*_run-frontend.ps1*' } |
+  ForEach-Object {
+    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    $staleCount++
+  }
+
+Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
+  Where-Object { $_.CommandLine -like "*$repoRoot\backend*" -or $_.CommandLine -like "*$repoRoot\frontend*" } |
+  ForEach-Object {
+    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    $staleCount++
+  }
+
+if ($staleCount -gt 0) {
+  Write-Host "  已清理 $staleCount 个残留进程" -ForegroundColor Green
+} else {
+  Write-Host "  无残留进程" -ForegroundColor DarkGray
+}
+
 Start-Sleep -Seconds 2
 
 # ---------- 结果核验 ----------
