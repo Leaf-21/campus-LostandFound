@@ -40,14 +40,35 @@ curl http://localhost:3000/health          # {"code":0,..."status":"UP"}
 curl http://localhost:3000/api/v1/posts    # 信息广场（默认 OPEN + PROCESSING）
 ```
 
-**演示账号**（密码取 `.env` 的 `DEMO_USER_PASSWORD`，默认 `Passw0rd!`）：
+**演示账号**（登录页 http://localhost:5173/login）
+
+普通用户密码统一取 `.env` 的 `DEMO_USER_PASSWORD`（默认 `Passw0rd!`）：
 
 | 账号 | 昵称 | 用途 |
 |---|---|---|
-| `student2026` | 小林 | 主演示账号（有发布、有收到的申请、有待处理线索） |
-| `azhe2026` | 阿哲 | 第二演示账号（用于「B 申请 A 的帖子」） |
-| `orange2026` / `xiaobei2026` / `anan2026` | 橙子学姐 / 小北 / 安安 | 数据集丰富度 |
-| `admin` | 平台管理员 | 密码取 `ADMIN_PASSWORD`；可访问 `/api/v1/admin/*` |
+| `student2026` | 小林 | **主演示账号**：发布 4 条、收到 4 条申请、2 条待处理线索 |
+| `azhe2026` | 阿哲 | 第二演示账号，用于演示「他人申请我的帖子」双人互动 |
+| `orange2026` | 橙子学姐 | 数据多样性 |
+| `xiaobei2026` | 小北 | 数据多样性 |
+| `anan2026` | 安安 | 数据多样性 |
+
+管理员账号密码取 `.env` 的 `ADMIN_ACCOUNT` / `ADMIN_PASSWORD`（默认 `admin` / `Admin@2026`）：
+
+| 账号 | 昵称 | 权限 |
+|---|---|---|
+| `admin` | 平台管理员 | 可调用 `/api/v1/admin/*` 隐藏/恢复信息（前端无管理页面，用 Postman 等工具） |
+
+### 推荐演示流程
+
+用两个窗口（普通窗口 + 无痕窗口）分别登录：
+
+1. `student2026` 登录 → 发布一条招领（带图片）
+2. `azhe2026` 登录 → 进入该信息详情 → 提交认领申请
+3. `student2026` 回到详情页 → 接受申请（信息转为「处理中」，其余申请自动拒绝）
+4. `student2026` 点击「确认完成交接」（信息转为「已找回 / 已归还」）
+
+> 密码来自 `.env` 配置而非代码硬编码；生产部署必须替换 `.env.example` 中的占位值，
+> 应用在 `NODE_ENV=production` 下会拒绝示例密钥启动。
 
 ## 已实现接口（P0 全量 + P1 管理员）
 
