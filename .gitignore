@@ -6,6 +6,9 @@ dist/
 coverage/
 backend/uploads/**
 !backend/uploads/.gitkeep
+# 演示图片是固定素材，需随仓库分发（真实用户上传文件仍忽略）
+!backend/uploads/demo/
+!backend/uploads/demo/*.jpg
 *.log
 logs/
 .DS_Store
