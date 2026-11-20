@@ -6,4 +6,7 @@ coverage/
 !.env.example
 uploads/*
 !uploads/.gitkeep
+# 演示图片是固定素材，需随仓库分发（用户上传的真实文件仍忽略）
+!uploads/demo/
+!uploads/demo/*.jpg
 *.log
