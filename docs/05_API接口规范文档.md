@@ -481,7 +481,7 @@ PENDING ──发布者接受──> ACCEPTED ──发布者确认完成──>
 
 前端约定：先在页面显示本地预览，上传成功后将响应中的 `url` 放入信息发布请求的 `images` 数组；发布信息时不得传本地 `blob:` 地址。
 
-> 契约说明（2026-11-18，K4）：`url` 为**可直接访问的绝对地址**（形如 `http://localhost:3000/uploads/<filename>`），由后端按 `PUBLIC_BASE_URL` 拼接；前端可直接用于 `<img src>`，无需再拼接前缀。
+> 契约说明（2026-11-18，K4）：`url` 为**可直接访问的绝对地址**（形如 `http://localhost:3000/uploads/<filename>`），由后端按 `PUBLIC_BASE_URL` 拼接；前端可直接用于 `<img src>`，无需再拼接前缀。Mock 模式下无真实文件系统，`mockUploadFile` 返回浏览器 `blob:` 地址（仅演示用、刷新失效）；切换真实 API 后即为绝对地址。
 
 ---
 

@@ -104,7 +104,8 @@ paths:
                   format: binary
       responses:
         '201':
-          description: 上传成功
+          description: |
+            上传成功。契约修订 K4（2026-11-18）：data.url 为可直接访问的绝对地址（PUBLIC_BASE_URL + /uploads/<filename>），前端可直接用于 <img src>，无需拼接前缀。
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiResponse' }
